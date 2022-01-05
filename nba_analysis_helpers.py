@@ -8,6 +8,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import re
 
 def get_team_log(team):
     id = teams.find_teams_by_full_name(team)[0]['id']
@@ -69,14 +70,18 @@ def make_boxplot_from_pts(log):
 def clean_matchup(log):
     return log['MATCHUP'].map(lambda x: x.split(' ')[2])
 
-def scores_by_opponent(log):
+# TODO csak az adott opponent ellenit mutassa
+def scores_by_opponent(log,opponent_name):
+    opponent_abb = teams.find_teams_by_full_name(opponent_name)[0]['abbreviation']
     by_opponent = pd.DataFrame()
     by_opponent['count'] = log.groupby('MATCHUP')['PTS'].count()
     by_opponent['min'] = log.groupby('MATCHUP')['PTS'].min()
     by_opponent['max'] = log.groupby('MATCHUP')['PTS'].max()
     by_opponent['mean'] = log.groupby('MATCHUP')['PTS'].mean()
     by_opponent['median'] = log.groupby('MATCHUP')['PTS'].median()
-    return by_opponent
+    if by_opponent.index.str.contains(pat = opponent_abb).any() is False:
+        return 
+    return pd.DataFrame(by_opponent.loc[opponent_abb])
 
 def make_day_table(log):
     log = log[['GAME_DATE','WL']]
@@ -178,4 +183,30 @@ def make_hist_subplot(log_1,log_2,team_1,team_2,by):
     )
 
     fig.update_layout(title_text=f'Comparasion of {team_1} and {team_2} scored points from this season with boxplot.')
+    fig.show()
+
+def make_stat_comparison_subplot(stat,team_1,team_2):   
+    fig = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=("Wins", "Loses"),
+        shared_yaxes=True)
+
+    #wins
+    fig.add_trace(
+        go.Bar(
+            y=[int(stat.loc[(stat['TEAM_NAME'] == team_1),['W']]['W']),int(stat.loc[(stat['TEAM_NAME'] == team_2),['W']]['W'])],
+            x=[team_1,team_2],
+            name=f'{team_1} Wins'),
+        row=1, col=1
+    )
+
+    fig.add_trace(
+        go.Bar(
+            y=[int(stat.loc[(stat['TEAM_NAME'] == team_1),['L']]['L']),int(stat.loc[(stat['TEAM_NAME'] == team_2),['L']]['L'])],
+            x=[team_1,team_2],
+            name=f'{team_2} Wins'),
+        row=1, col=2
+    )
+
+    fig.update_layout(title_text=f'Comparasion of {team_1} and {team_2} statistics.')
     fig.show()
