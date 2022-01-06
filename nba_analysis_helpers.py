@@ -79,8 +79,6 @@ def scores_by_opponent(log,opponent_name):
     by_opponent['max'] = log.groupby('MATCHUP')['PTS'].max()
     by_opponent['mean'] = log.groupby('MATCHUP')['PTS'].mean()
     by_opponent['median'] = log.groupby('MATCHUP')['PTS'].median()
-    if by_opponent.index.str.contains(pat = opponent_abb).any() is False:
-        return 
     return pd.DataFrame(by_opponent.loc[opponent_abb])
 
 def make_day_table(log):
